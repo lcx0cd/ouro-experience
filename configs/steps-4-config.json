@@ -1,0 +1,23 @@
+{
+  "name": "Ouro-1.4B 论文默认配置 (steps=4)",
+  "note": "质量最高但慢。论文 Table 7 的 MMLU 67.35% 在此配置下。Apple M4 实测 6.5 tok/s。",
+  "model": "ByteDance/Ouro-1.4B",
+  "transformers": "4.57.6",
+  "config_overrides": {
+    "total_ut_steps": 4,
+    "early_exit_threshold": 1.0
+  },
+  "generation": {
+    "max_new_tokens": 120,
+    "do_sample": false,
+    "prompt_style": "natural-language",
+    "max_prompt_tokens": 200,
+    "memory_cleanup": "每次 generate 后: del out; gc.collect(); torch.mps.empty_cache()"
+  },
+  "benchmark": {
+    "device": "MPS (Apple M4 10-core GPU)",
+    "short_prompt_93tok": "6.52 tok/s",
+    "medium_prompt_370tok": "5.18 tok/s",
+    "long_prompt_936tok": "2.94 tok/s"
+  }
+}

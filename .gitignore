@@ -1,0 +1,14 @@
+# 模型权重（不包含，需要在 HF 下载）
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# 虚拟环境
+ouro-venv/
+venv/
+.venv/
+
+# 系统
+.DS_Store
+*.swp

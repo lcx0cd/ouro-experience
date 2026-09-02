@@ -1,0 +1,23 @@
+{
+  "name": "Ouro-1.4B 推荐配置 (steps=2, 中文短对话)",
+  "note": "Apple M4 16GB 上实测 12.3 tok/s (短 prompt)。质量与 steps=4 差距小，速度达标。",
+  "model": "ByteDance/Ouro-1.4B",
+  "transformers": "4.57.6 (或 >=4.56, 需含 ouro-cache-fix)",
+  "config_overrides": {
+    "total_ut_steps": 2,
+    "early_exit_threshold": 1.0
+  },
+  "generation": {
+    "max_new_tokens": 120,
+    "do_sample": false,
+    "prompt_style": "natural-language, 不要用 '事实：…问题：…' 结构化前缀",
+    "max_prompt_tokens": 400,
+    "memory_cleanup": "每次 generate 后: del out; gc.collect(); torch.mps.empty_cache()"
+  },
+  "benchmark": {
+    "device": "MPS (Apple M4 10-core GPU)",
+    "short_prompt_93tok": "12.34 tok/s",
+    "medium_prompt_370tok": "10.45 tok/s",
+    "long_prompt_936tok": "7.72 tok/s"
+  }
+}
