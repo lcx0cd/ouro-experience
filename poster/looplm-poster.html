@@ -124,8 +124,8 @@
   </div>
 
   <div class="quote">
-    <div class="q">发布 11 个月、下载 2 万次，<span class="hl">没有任何针对 loop 架构的推理优化 PR / issue</span>。最有趣的结论可能是：<span class="hl">其实根本没人看这些模型</span>。</div>
-    <div class="a">—— 我们跑完两轮实测后，对"社区热度"这件事的观察</div>
+    <div class="q">发布 11 个月、下载 2 万次。vLLM 支持存在（registry 已注册，<span class="mono">v0.26.0</span>），但<span class="hl">只到"能跑"的层面</span>——通过 transformers 后端通用加载，<span class="hl">没有独立的 loop 优化</span>（不支持 adaptive exit、总是跑满 4 步）。<span class="hl">没人做过针对 loop 架构的推理优化</span>——没有 GGUF、没有 MLX 编译优化、没有专门的推理框架、论文的 specialized training 也没发布。</div>
+    <div class="a">最有趣的结论可能是：<span class="hl">其实根本没人研究怎么优化这类模型</span>。</div>
   </div>
 
   <div class="footer">

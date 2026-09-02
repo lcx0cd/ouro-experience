@@ -79,6 +79,20 @@ torch.mps.empty_cache()
 
 ---
 
+## 官方生态核查 + 我们的判断（2026-09）
+
+项目页 `ouro-llm.github.io` 声称 "vLLM and SGLang integration is ready"。复核后的准确状态：
+
+- **vLLM**：`registry.py` 已注册 `OuroForCausalLM`（v0.26.0），但无独立 `ouro.py`——transformers 后端通用加载。模型卡确认"vLLM 不支持 adaptive exit，总是跑满 4 步"。属"能跑"层面，无 loop 专门优化。
+- **SGLang**：同通用加载，无 loop 专门实现。
+- **无 GGUF/llama.cpp**（架构不支持）、**无 AWQ/GPTQ**（HF 仅列 MLX 4bit）、**无 MLX 编译优化**（mlx-engine Issue #277 无 PR）。
+
+**判断（已确认并发表）**：发布 11 个月、下载 2 万次，官方支持存在但都停留在"能跑"的通用加载层面——**没有出现过针对 loop 架构的推理优化工作**（无 GGUF、无 MLX 编译优化、无专门推理框架、论文 3.4 节的 specialized adaptive exit training 也未发布进权重）。这个架构方向的推理优化基本是空白。
+
+**对我们结论的影响**：这解释了为什么 M4 上没有现成的提速路径——不是我们没找到，而是这个方向本身缺乏社区投入。
+
+---
+
 ## 快速开始
 
 ```bash

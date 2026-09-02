@@ -73,3 +73,15 @@ Ouro 的 KV cache 是 96 槽（4 steps × 24 层），是普通模型的 4 倍�
 **结论**：Ouro base 的英文能力远好于中文，但**核心问题不是语言，而是任务类型**——它被训练为英文知识问答/选择题，无法处理"开放式多步推理+生成可核验假设"这类任务。即使英文流畅，也退回到阅读理解模式。
 
 **对论文"1.4B 匹配 4B 模型"的理解**：这个声称是基于 MMLU/BBH 等英文选择题基准，不是基于开放推理任务。在后者上，1.4B 的 loop 架构无法弥补参数规模的根本限制。
+
+## 7. 官方生态核查（2026-09 复核）
+
+项目页 `ouro-llm.github.io`（2025-10-30 新闻）声称 "vLLM and SGLang integration is ready"。我们核查后的准确状态：
+
+- **vLLM**：`vllm/model_executor/models/registry.py` 已注册 `OuroForCausalLM`（v0.26.0），但**没有独立的 `ouro.py` 模型实现**——通过 transformers 后端（trust_remote_code）通用加载。模型卡明确"vLLM 不支持 adaptive exit，总是执行满 total_ut_steps"。属"能跑"层面，**无 loop 架构专门优化**。
+- **SGLang**：项目页提及 integration ready，但同为通用加载，未发现 loop 专门实现。
+- **无 GGUF/llama.cpp**：架构不在支持列表（社区确认为自定义推理包装器需求，已确认不可行）。
+- **无 MLX 编译优化**：mlx-community 4bit 为通用转换（基于修复前模型），mlx-engine Issue #277 请求 Ouro 支持但无 PR。
+- **无 AWQ/GPTQ**：HF 量化页仅列 MLX 4bit。
+
+**判断（已确认并发表）**：发布 11 个月、下载 2 万次，官方支持存在但都停留在"能跑"的通用加载层面——**没有出现过针对 loop 架构的推理优化工作**（无 GGUF、无 MLX 编译优化、无专门推理框架、论文 3.4 节的 specialized adaptive exit training 也未发布进权重）。这个架构方向的推理优化基本是空白。

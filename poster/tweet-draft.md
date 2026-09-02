@@ -38,8 +38,11 @@ del out; gc.collect(); torch.mps.empty_cache()
 英文优于中文（中文训练仅 ~2%），但开放推理任务全灭——10/10 未输出可核验假设，5 题退化成阅读理解模式。
 
 7/ 最有趣的观察：
-发布 11 个月、2 万下载，没有任何针对 loop 架构的推理优化 PR / issue。
-也许……其实根本没人看这些模型。
+发布 11 个月、2 万下载。vLLM 支持存在（registry 已注册 v0.26.0），但只到"能跑"——transformers 通用加载，无独立 loop 优化（不支持 adaptive exit、跑满 4 步）。没有 GGUF、没有 MLX 编译优化、没有专门推理框架、论文的 specialized training 也没发布。
+也许……其实根本没人研究怎么优化这类模型。
+
+8/ 补充确认：
+项目页 (ouro-llm.github.io) 声称 vLLM/SGLang integration "ready"——我们核查后确认为 vLLM registry 条目 + transformers 后端加载，属官方承认支持但无 loop 架构专门实现。判断不变：这个架构方向的推理优化是空白。
 
 完整实验数据（基准、gate 分布、10 题输出、显存污染复现）：
 github.com/lcx0cd/ouro-experience
