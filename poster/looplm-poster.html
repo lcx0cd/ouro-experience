@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LoopLM 实测报告 · Ouro-1.4B</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface-2: #1c2330;
+    --border: rgba(148,163,184,.14); --text-1: #e6edf3; --text-2: #9aa7b8;
+    --text-3: #6e7b8d; --accent: #58a6ff; --accent-2: #bc8cff; --accent-3: #f778ba;
+    --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --grad: linear-gradient(135deg,#58a6ff,#bc8cff 55%,#f778ba);
+    --radius: 18px; --radius-sm: 12px;
+    --font: -apple-system,'SF Pro Display','Inter','PingFang SC','Noto Sans SC',sans-serif;
+    --mono: 'SF Mono','JetBrains Mono',Menlo,monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text-1); font-family: var(--font); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+
+  .poster { width: 1080px; margin: 0 auto; padding: 56px 60px 48px; background:
+    radial-gradient(1200px 500px at 20% -10%, rgba(88,166,255,.10), transparent 60%),
+    radial-gradient(900px 400px at 90% 110%, rgba(188,140,255,.10), transparent 60%),
+    var(--bg); }
+
+  /* ── header ── */
+  .kicker { font-size: 17px; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 14px; }
+  h1 { font-size: 52px; line-height: 1.12; letter-spacing: -.02em; font-weight: 800; margin-bottom: 14px; }
+  h1 .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 21px; color: var(--text-2); max-width: 920px; margin-bottom: 10px; }
+  .sub { font-size: 16px; color: var(--text-3); }
+
+  /* ── stat grid ── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 34px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px 20px; }
+  .stat .num { font-size: 38px; font-weight: 800; letter-spacing: -.02em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--mono); }
+  .stat .lbl { font-size: 13.5px; color: var(--text-3); margin-top: 4px; }
+
+  /* ── sections ── */
+  .sec { margin: 30px 0; }
+  .sec-h { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .sec-h .tag { font-family: var(--mono); font-size: 13px; color: var(--accent); border: 1px solid rgba(88,166,255,.4); border-radius: 6px; padding: 2px 8px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px 20px; }
+  .card h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .card p { font-size: 14.5px; color: var(--text-2); }
+  .card .mono { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .card.bad h4 { color: var(--bad); }
+  .card.good h4 { color: var(--good); }
+  .card.warn h4 { color: var(--warn); }
+
+  /* ── bench table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 6px; }
+  th { text-align: left; font-size: 13px; color: var(--text-3); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(148,163,184,.08); }
+  td.num { font-family: var(--mono); color: var(--text-1); }
+  tr.hl td { background: rgba(88,166,255,.08); }
+  .good-t { color: var(--good); font-weight: 700; }
+  .bad-t { color: var(--bad); font-weight: 700; }
+
+  /* ── findings list ── */
+  .find { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(148,163,184,.08); }
+  .find:last-child { border-bottom: none; }
+  .find .n { font-family: var(--mono); font-size: 15px; color: var(--accent-2); font-weight: 700; min-width: 34px; }
+  .find .t { font-weight: 700; font-size: 16px; }
+  .find .d { font-size: 14.5px; color: var(--text-2); margin-top: 3px; }
+
+  /* ── quote ── */
+  .quote { margin-top: 30px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent-2); border-radius: var(--radius-sm); padding: 22px 26px; }
+  .quote .q { font-size: 20px; font-weight: 700; line-height: 1.4; }
+  .quote .q .hl { background: linear-gradient(120deg, rgba(188,140,255,.22), rgba(88,166,255,.18)); padding: 0 6px; border-radius: 4px; }
+  .quote .a { font-size: 14px; color: var(--text-3); margin-top: 10px; }
+
+  /* ── footer ── */
+  .footer { margin-top: 32px; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; color: var(--text-3); border-top: 1px solid var(--border); padding-top: 20px; }
+  .footer .mono { font-family: var(--mono); color: var(--text-2); }
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <p class="kicker">Looped Language Model · 实测报告</p>
+  <h1>把 <span class="grad">LoopLM</span> 部署到本地后，<br>我们看到了什么</h1>
+  <p class="lede">ByteDance Ouro-1.4B —— 宣称"1.4B 参数，匹配 3–4B 质量"，靠 4 次共享权重循环在潜空间"思考"。我们在 Apple M4 (16GB) 上跑了两轮完整实测。</p>
+  <p class="sub">方法：torch-MPS · BF16 · transformers 4.57.6 · 权重 sha256 已与官方校验一致 · 10 题精切研究议题 × 中英文对照</p>
+
+  <div class="stats">
+    <div class="stat"><div class="num">1.4B</div><div class="lbl">参数量（24 层 × 4 循环）</div></div>
+    <div class="stat"><div class="num">12.3<span style="font-size:18px"> tok/s</span></div><div class="lbl">steps=2 实测（短 prompt）</div></div>
+    <div class="stat"><div class="num">6.5<span style="font-size:18px"> tok/s</span></div><div class="lbl">steps=4 论文默认档</div></div>
+    <div class="stat"><div class="num">10/10</div><div class="lbl">开放推理任务未输出任何可核验假设</div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span class="tag">01</span> 为什么"慢"是物理，不是工程</div>
+    <p style="font-size:15.5px;color:var(--text-2);margin-bottom:14px">每生成 1 个 token，模型要把 2.87GB 权重读取 4 遍 = <b style="color:var(--text-1)">11.5GB/token</b>。M4 内存带宽 ~120GB/s → 理论极限仅 <b style="color:var(--text-1)">~10 tok/s</b>。LoopLM 的本质是<b style="color:var(--text-1)">用 4× 算力换 3–4× 参数效率</b>——省内存，不省计算。</p>
+    <table>
+      <tr><th>steps</th><th>短 prompt (93 tok)</th><th>中 prompt (370 tok)</th><th>长 prompt (936 tok)</th></tr>
+      <tr><td>1</td><td class="num">19.43 tok/s</td><td class="num">16.55</td><td class="num">9.19（提前 EOS）</td></tr>
+      <tr class="hl"><td>2（推荐）</td><td class="num good-t">12.34 tok/s</td><td class="num">10.45</td><td class="num">7.72</td></tr>
+      <tr><td>3</td><td class="num">8.47</td><td class="num">7.13</td><td class="num">4.56</td></tr>
+      <tr><td>4</td><td class="num">6.52</td><td class="num">5.18</td><td class="num bad-t">2.94</td></tr>
+    </table>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span class="tag">02</span> 三个让结果"失真"的坑（我们都踩了）</div>
+    <div class="find"><span class="n">A</span><div><div class="t">显存污染 → 连续推理速度崩盘</div>
+      <div class="d">同一模型连跑多次 generate，速度从 <span class="mono">10.7 → 1.3 tok/s</span>，输出开始重复循环。修复：每次 <span class="mono">del out + gc.collect() + torch.mps.empty_cache()</span>。不修的话，<b>第 N 个评测结果全是假的</b>。</div></div></div>
+    <div class="find"><span class="n">B</span><div><div class="t">提示词格式陷阱 → 同样内容，换个格式就退化</div>
+      <div class="d"><span class="mono">"事实：…问题：…"</span> 格式触发训练见过的硬编码输出（"可能的可能的…"×N）；改成自然语言提问，同一题输出恢复正常。<b>用小模型，必须用自然语言，别用结构化标签。</b></div></div></div>
+    <div class="find"><span class="n">C</span><div><div class="t">自适应退出"名存实亡"</div>
+      <div class="d">论文称平均 2.5 步可达 66% 准确率。但实测发布模型前两步 λ 仅 <span class="mono">0.03/0.08</span>，threshold=0.5 时平均仍要 3.7 步。<b>那个 specialized 训练根本没进发布权重。</b></div></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span class="tag">03</span> 能力边界：语言 vs 任务类型</div>
+    <div class="grid2">
+      <div class="card good"><h4>英文 ✓ 优于中文</h4><p>英文能输出连贯句子（"The current housing market is characterized by…"），中文退化到字重复。中文训练占比仅 ~2%。</p></div>
+      <div class="card bad"><h4>开放推理 ✗ 全灭</h4><p>10 题均未输出可核验假设。5/10 题退化成阅读理解模式：<span class="mono">"Question: … Answer: …"</span>。</p></div>
+    </div>
+    <p style="font-size:14.5px;color:var(--text-3);margin-top:14px">→ 论文"1.4B 匹配 4B"基于 MMLU 等英文选择题。loop 架构补的是<b>参数效率</b>，补不了<b>任务泛化</b>的规模鸿沟。</p>
+  </div>
+
+  <div class="quote">
+    <div class="q">发布 11 个月、下载 2 万次，<span class="hl">没有任何针对 loop 架构的推理优化 PR / issue</span>。最有趣的结论可能是：<span class="hl">其实根本没人看这些模型</span>。</div>
+    <div class="a">—— 我们跑完两轮实测后，对"社区热度"这件事的观察</div>
+  </div>
+
+  <div class="footer">
+    <span>@lcx0cd · github.com/lcx0cd/ouro-experience · 权重 sha256 校验一致 · 2026-09</span>
+    <span class="mono">Ouro-1.4B · Apple M4 · MPS</span>
+  </div>
+
+</div>
+</body>
+</html>
